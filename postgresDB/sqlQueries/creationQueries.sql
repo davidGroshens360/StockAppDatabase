@@ -19,17 +19,11 @@ CREATE TABLE userFriends (
     sender_id INT NOT NULL REFERENCES users(user_id),
     receiver_id INT NOT NULL REFERENCES users(user_id),
     friend_status VARCHAR(20) NOT NULL CHECK (friend_status IN ('pending', 'accepted', 'rejected')),
+    last_updated TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (sender_id, receiver_id)
 );
 
---Create Review Table
-CREATE TABLE reviews (
-    review_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(user_id),
-    title VARCHAR(255) NOT NULL,
-    body TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
+
 
 --Create Portfolio Table
 CREATE TABLE portfolios (
@@ -86,13 +80,52 @@ CREATE TABLE stock_history (
     PRIMARY KEY (stock_symbol, stock_date)
 );
 
+--Create Stock Updates Table (for user-added data)
+CREATE TABLE stock_updates (
+    stock_symbol VARCHAR(20) NOT NULL REFERENCES stock(stock_symbol),
+    stock_date DATE NOT NULL,
+    open_price NUMERIC(18, 4),
+    close_price NUMERIC(18, 4),
+    high_price NUMERIC(18, 4),
+    low_price NUMERIC(18, 4),
+    volume INT,
+    PRIMARY KEY (stock_symbol, stock_date)
+);
+
+--Create Combined Stock History View
+CREATE VIEW combined_stock_history AS
+SELECT * FROM stock_history
+UNION
+SELECT * FROM stock_updates;
+
 --Create Stock List Table
 CREATE TABLE stock_list (
     user_id INT NOT NULL REFERENCES users(user_id),
     list_name VARCHAR(255) NOT NULL,
-    visibility VARCHAR(20) NOT NULL CHECK (visibility IN ('public', 'private')),
+    visibility VARCHAR(20) NOT NULL CHECK (visibility IN ('public', 'private', 'shared')),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, list_name)
+);
+
+--Create Stock List Shares Table
+CREATE TABLE stock_list_shares (
+    list_owner_id INT NOT NULL,
+    list_name VARCHAR(255) NOT NULL,
+    shared_with_user_id INT NOT NULL REFERENCES users(user_id),
+    PRIMARY KEY (list_owner_id, list_name, shared_with_user_id),
+    FOREIGN KEY (list_owner_id, list_name) REFERENCES stock_list(user_id, list_name) ON DELETE CASCADE
+);
+
+--Create Review Table
+CREATE TABLE reviews (
+    review_id SERIAL PRIMARY KEY,
+    reviewer_id INT NOT NULL REFERENCES users(user_id),
+    list_user_id INT NOT NULL,
+    list_name VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (list_user_id, list_name) REFERENCES stock_list(user_id, list_name) ON DELETE CASCADE
 );
 
 --CREATE Stock List to stock Relationship

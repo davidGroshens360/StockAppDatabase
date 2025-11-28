@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Social Network</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Section -->
+        <div id="auth-section">
+            <h1>Stock Social Network</h1>
+            <div class="form-group">
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <input type="email" id="email" placeholder="Email (Register only)">
+                <button onclick="login()">Login</button>
+                <button onclick="register()">Register</button>
+            </div>
+            <p id="auth-message"></p>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" style="display: none;">
+            <header>
+                <h2>Welcome, <span id="user-display"></span></h2>
+                <button onclick="logout()">Logout</button>
+            </header>
+
+            <div class="container">
+                <!-- Portfolios -->
+                <div class="panel">
+                    <h3>My Portfolios</h3>
+                    <div class="form-group">
+                        <input type="text" id="new-portfolio-name" placeholder="New Portfolio Name">
+                        <button onclick="createPortfolio()">Create</button>
+                    </div>
+                    <ul id="portfolio-list"></ul>
+                </div>
+
+                <!-- Active Portfolio View -->
+                <div id="portfolio-view" class="panel" style="display: none;">
+                    <h3 id="active-portfolio-name"></h3>
+                    <p>Cash: $<span id="portfolio-cash"></span></p>
+                    
+                    <div class="actions">
+                        <input type="number" id="cash-amount" placeholder="Amount">
+                        <button onclick="deposit()">Deposit</button>
+                        <button onclick="withdraw()">Withdraw</button>
+                    </div>
+
+                    <h4>Holdings</h4>
+                    <table id="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Shares</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h4>Trade</h4>
+                    <div class="actions">
+                        <input type="text" id="trade-symbol" placeholder="Symbol (e.g. AAPL)">
+                        <input type="number" id="trade-shares" placeholder="Shares">
+                        <button onclick="buyStock()">Buy</button>
+                        <button onclick="sellStock()">Sell</button>
+                    </div>
+                </div>
+
+                <!-- Stock Analysis -->
+                <div class="panel">
+                    <h3>Stock Analysis</h3>
+                    <input type="text" id="analysis-symbol" placeholder="Symbol">
+                    <button onclick="analyzeStock()">Analyze</button>
+                    <div id="analysis-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
