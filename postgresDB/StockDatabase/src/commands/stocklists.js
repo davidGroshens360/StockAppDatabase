@@ -61,4 +61,81 @@ module.exports = (program) => {
       console.table(rows);
       process.exit(0);
     });
+
+  //list delete  
+  list
+    .command('delete <name>')
+    .description('Delete a stock list')
+    .action(async (name) => {
+      const s = session.load();
+      if (!s) return console.log('Not logged in');
+
+      try {
+        const { rowCount } = await pool.query(
+          `
+          DELETE FROM stock_list
+          WHERE user_id = $1
+            AND list_name = $2
+          `,
+          [s.user_id, name]
+        );
+
+        if (rowCount === 0) {
+          throw new Error('Stock list not found or not owned by user.');
+        }
+
+        console.log(`Stock list "${name}" deleted.`);
+        process.exit(0);
+      } catch (err) {
+        console.error(err.message);
+      }
+    });
+  list
+  .command('check <name>')
+  .description('View stocks in a stock list')
+  .action(async (name) => {
+    const s = session.load();
+    if (!s) return console.log('Not logged in');
+
+    try {
+      // Ensure list exists and belongs to user
+      const { rowCount } = await pool.query(
+        `
+        SELECT 1
+        FROM stock_list
+        WHERE user_id = $1
+          AND list_name = $2
+        `,
+        [s.user_id, name]
+      );
+
+      if (rowCount === 0) {
+        throw new Error('Stock list not found or not owned by user.');
+      }
+
+      // Fetch stocks in the list
+      const { rows } = await pool.query(
+        `
+        SELECT stock_symbol
+        FROM stock_list_items
+        WHERE user_id = $1
+          AND list_name = $2
+        ORDER BY stock_symbol
+        `,
+        [s.user_id, name]
+      );
+
+      if (rows.length === 0) {
+        console.log(`Stock list "${name}" is empty.`);
+      } else {
+        console.log(`Stocks in "${name}":`);
+        console.table(rows);
+      }
+
+      process.exit(0);
+    } catch (err) {
+      console.error(err.message);
+    }
+  });
+  
 };

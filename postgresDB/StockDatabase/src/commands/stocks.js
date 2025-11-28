@@ -89,4 +89,82 @@ module.exports = (program) => {
 
       process.exit(0);
     });
+  // stock beta
+  stock
+    .command('beta <symbol>')
+    .option('-m, --market <symbol>', 'Market symbol', 'SPY')
+    .description('Calculate stock beta against the market')
+    .action(async (symbol, opts) => {
+      try {
+        const stockSym = symbol.toUpperCase();
+        const marketSym = opts.market.toUpperCase();
+
+        // Fetch aligned price history
+        const { rows } = await pool.query(
+          `
+          SELECT s.stock_date,
+                 s.close_price AS stock_close,
+                 m.close_price AS market_close
+          FROM stock_history s
+          JOIN stock_history m
+            ON s.stock_date = m.stock_date
+          WHERE s.stock_symbol = $1
+            AND m.stock_symbol = $2
+          ORDER BY s.stock_date
+          `,
+          [stockSym, marketSym]
+        );
+
+        if (rows.length < 2) {
+          throw new Error('Not enough data to compute beta.');
+        }
+
+        // Compute daily returns
+        const stockReturns = [];
+        const marketReturns = [];
+
+        for (let i = 1; i < rows.length; i++) {
+          const rs =
+            (rows[i].stock_close - rows[i - 1].stock_close) /
+            rows[i - 1].stock_close;
+
+          const rm =
+            (rows[i].market_close - rows[i - 1].market_close) /
+            rows[i - 1].market_close;
+
+          stockReturns.push(rs);
+          marketReturns.push(rm);
+        }
+
+        const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+        const meanStock = mean(stockReturns);
+        const meanMarket = mean(marketReturns);
+
+        let covariance = 0;
+        let variance = 0;
+
+        for (let i = 0; i < stockReturns.length; i++) {
+          covariance +=
+            (stockReturns[i] - meanStock) *
+            (marketReturns[i] - meanMarket);
+
+          variance +=
+            Math.pow(marketReturns[i] - meanMarket, 2);
+        }
+
+        covariance /= stockReturns.length;
+        variance /= stockReturns.length;
+
+        const beta = covariance / variance;
+
+        console.log(
+          `Beta of ${stockSym} vs ${marketSym}: ${beta.toFixed(4)}`
+        );
+
+        process.exit(0);
+      } catch (err) {
+        console.error(err.message);
+      }
+    });
 };
