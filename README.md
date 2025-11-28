@@ -28,6 +28,8 @@ node index.js register -u <username> -e <email> -p <password>
 --------------------------------------------------------------
 LIST OF COMMANDS:
 
+---USER ACTIONS
+
 Register user:
 node index.js register -u <username> -e <email> -p <password>
 
@@ -36,6 +38,8 @@ node index.js login -u <username> -p <password>
 
 Logout:
 node index.js logout
+
+---STOCK DATA
 
 View historical stock price:
 node index.js stock history <SYMBOL>
@@ -46,11 +50,30 @@ node index.js stock sma <SYMBOL> --window <days>
 Predict future stock prices with Linear regression:
 node index.js stock predict <SYMBOL> --days <n>
 
+---PORTFOLIO ACTIONS
+
 List portfolios:
 node index.js portfolio list
 
 Create portfolio:
 node index.js portfolio create <portfolio_name>
+
+Deposit Cash to Portfolio:
+portfolio deposit <name> <amount>
+
+Withdraw Cash From Portfolio:
+portfolio withdraw <name> <amount>
+
+Buy Stock to Portfolio:
+portfolio buy <name> <symbol> <shares>
+
+Sell Stock in Portfolio:
+portfolio sell <name> <symbol> <shares>
+
+View Portfolio Holdings:
+portfolio holdings <name>
+
+---STOCK LIST ACTIONS
 
 Create stock list:
 node index.js list create <list_name> [--public]
@@ -61,6 +84,14 @@ node index.js list add <list_name> <SYMBOL>
 View Your Stock Lists:
 node index.js list view
 
+Check Stocks in a Stock List:
+node index.js list check <list_name>
+
+Delete Your Stock List:
+node index.js delete <list_name>
+
+---FRIEND ACTIONS
+
 List Friends:
 node index.js friends list
 
@@ -70,8 +101,10 @@ node index.js friends request <username>
 Respond to a friend request:
 node index.js friends respond <senderId> <accept|reject>
 
+---REVIEW ACTION
+
 Add a review:
-node index.js review add "<title>" "<body>"
+node index.js review add <list_name> "<title>" "<body>"
 
 View reviews:
 node index.js review view
