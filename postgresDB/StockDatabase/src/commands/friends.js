@@ -2,8 +2,6 @@ const pool = require('../DB/pool');
 const session = require('../auth/session');
 
 module.exports = (program) => {
-
-  // Create parent command
   const friends = program
     .command('friends')
     .description('Manage friends');
@@ -56,7 +54,7 @@ module.exports = (program) => {
       process.exit(0);
     });
 
-  //friends respond
+  //friends response
   friends
     .command('respond <senderId> <accept|reject>')
     .description('Respond to a friend request')

@@ -7,7 +7,7 @@ module.exports = (program) => {
     .command('review')
     .description('Manage reviews');
 
-  /* ===================== REVIEW ADD ===================== */
+  // Review Stock List
 
   review
     .command('add <stock_list> <title> <body>')
@@ -28,7 +28,7 @@ module.exports = (program) => {
       process.exit(0);
     });
 
-  /* ===================== REVIEW VIEW ===================== */
+  //View Reviews
 
   review
     .command('view')

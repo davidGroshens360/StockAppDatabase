@@ -90,81 +90,75 @@ module.exports = (program) => {
       process.exit(0);
     });
   // stock beta
-  stock
-    .command('beta <symbol>')
-    .option('-m, --market <symbol>', 'Market symbol', 'SPY')
-    .description('Calculate stock beta against the market')
-    .action(async (symbol, opts) => {
-      try {
-        const stockSym = symbol.toUpperCase();
-        const marketSym = opts.market.toUpperCase();
+ stock
+  .command('beta <symbol>')
+  .description('Calculate beta using average market returns')
+  .action(async (symbol) => {
+    try {
+      const sym = symbol.toUpperCase();
 
-        // Fetch aligned price history
-        const { rows } = await pool.query(
-          `
-          SELECT s.stock_date,
-                 s.close_price AS stock_close,
-                 m.close_price AS market_close
-          FROM stock_history s
-          JOIN stock_history m
-            ON s.stock_date = m.stock_date
-          WHERE s.stock_symbol = $1
-            AND m.stock_symbol = $2
-          ORDER BY s.stock_date
-          `,
-          [stockSym, marketSym]
-        );
+      const { rows } = await pool.query(
+        `
+        WITH returns AS (
+          SELECT
+            stock_symbol,
+            stock_date,
+            (close_price - LAG(close_price)
+              OVER (PARTITION BY stock_symbol ORDER BY stock_date))
+            / LAG(close_price)
+              OVER (PARTITION BY stock_symbol ORDER BY stock_date)
+            AS daily_return
+          FROM stock_history
+        ),
+        market AS (
+          SELECT
+            stock_date,
+            AVG(daily_return) AS market_return
+          FROM returns
+          WHERE daily_return IS NOT NULL
+          GROUP BY stock_date
+        )
+        SELECT
+          r.stock_date,
+          r.daily_return AS stock_return,
+          m.market_return
+        FROM returns r
+        JOIN market m USING (stock_date)
+        WHERE r.stock_symbol = $1
+          AND r.daily_return IS NOT NULL
+        ORDER BY r.stock_date
+        `,
+        [sym]
+      );
 
-        if (rows.length < 2) {
-          throw new Error('Not enough data to compute beta.');
-        }
-
-        // Compute daily returns
-        const stockReturns = [];
-        const marketReturns = [];
-
-        for (let i = 1; i < rows.length; i++) {
-          const rs =
-            (rows[i].stock_close - rows[i - 1].stock_close) /
-            rows[i - 1].stock_close;
-
-          const rm =
-            (rows[i].market_close - rows[i - 1].market_close) /
-            rows[i - 1].market_close;
-
-          stockReturns.push(rs);
-          marketReturns.push(rm);
-        }
-
-        const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-
-        const meanStock = mean(stockReturns);
-        const meanMarket = mean(marketReturns);
-
-        let covariance = 0;
-        let variance = 0;
-
-        for (let i = 0; i < stockReturns.length; i++) {
-          covariance +=
-            (stockReturns[i] - meanStock) *
-            (marketReturns[i] - meanMarket);
-
-          variance +=
-            Math.pow(marketReturns[i] - meanMarket, 2);
-        }
-
-        covariance /= stockReturns.length;
-        variance /= stockReturns.length;
-
-        const beta = covariance / variance;
-
-        console.log(
-          `Beta of ${stockSym} vs ${marketSym}: ${beta.toFixed(4)}`
-        );
-
-        process.exit(0);
-      } catch (err) {
-        console.error(err.message);
+      if (rows.length < 2) {
+        return console.log('Not enough data to calculate beta');
       }
-    });
+
+      const stockR = rows.map(r => Number(r.stock_return));
+      const marketR = rows.map(r => Number(r.market_return));
+
+      const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+      const meanStock = mean(stockR);
+      const meanMarket = mean(marketR);
+
+      let cov = 0;
+      let varM = 0;
+
+      for (let i = 0; i < stockR.length; i++) {
+        cov += (stockR[i] - meanStock) * (marketR[i] - meanMarket);
+        varM += (marketR[i] - meanMarket) ** 2;
+      }
+
+      cov /= stockR.length;
+      varM /= stockR.length;
+
+      const beta = cov / varM;
+
+      console.log(`Beta of ${sym} vs market average: ${beta.toFixed(4)}`);
+    } catch (err) {
+      console.error(err.message);
+    }
+  });
 };

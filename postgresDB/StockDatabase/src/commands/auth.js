@@ -16,7 +16,7 @@ module.exports = program => {
         'INSERT INTO users (username, email, password_hash) VALUES ($1,$2,$3)',
         [opts.username, opts.email, hash]
       );
-      console.log('✅ Account created');
+      console.log('Account created');
       process.exit(0);
     });
 
