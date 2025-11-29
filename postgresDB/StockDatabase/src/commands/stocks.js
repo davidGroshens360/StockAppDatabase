@@ -1,5 +1,6 @@
 const pool = require('../DB/pool');
 const session = require('../auth/session');
+const asciichart = require('asciichart');
 
 function sma(values, window) {
   if (values.length < window) return [];
@@ -32,27 +33,6 @@ module.exports = (program) => {
       );
 
       console.table(rows);
-      process.exit(0);
-    });
-
-  // stock sma
-  stock
-    .command('sma <symbol>')
-    .option('-w, --window <n>', 'Window size', '20')
-    .description('Simple moving average')
-    .action(async (symbol, opts) => {
-      const { rows } = await pool.query(
-        `SELECT close_price
-         FROM stock_history
-         WHERE stock_symbol = $1
-         ORDER BY stock_date`,
-        [symbol.toUpperCase()]
-      );
-
-      const closes = rows.map(r => Number(r.close_price));
-      const values = sma(closes, Number(opts.window));
-
-      console.log(values.filter(v => v !== null));
       process.exit(0);
     });
 
