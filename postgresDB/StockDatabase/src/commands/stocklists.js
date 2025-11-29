@@ -46,21 +46,26 @@ module.exports = (program) => {
 
   //list view
   list
-    .command('view')
-    .description('View your stock lists')
-    .action(async () => {
-      const s = session.load();
+  .command('view')
+  .description('View accessible stock lists')
+  .action(async () => {
+    const s = session.load();
+    if (!s) return console.log('Not logged in');
 
-      const { rows } = await pool.query(
-        `SELECT list_name, visibility
-         FROM stock_list
-         WHERE user_id = $1`,
-        [s.user_id]
-      );
+    const { rows } = await pool.query(
+      `
+      SELECT user_id, list_name, visibility, created_at
+      FROM stock_list
+      WHERE user_id = $1
+         OR visibility = 'public'
+      ORDER BY created_at DESC
+      `,
+      [s.user_id]
+    );
 
-      console.table(rows);
-      process.exit(0);
-    });
+    console.table(rows);
+    process.exit(0);
+  });
 
   //list delete  
   list
